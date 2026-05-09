@@ -3,7 +3,9 @@ set -eu
 
 LOCKDIR="/tmp/mosdns-install.lock"
 TMP_ROOT="/tmp/mosdns-install"
-MOSDNS_API="https://api.github.com/repos/sbwml/luci-app-mosdns/releases/latest"
+MOSDNS_REPO="sbwml/luci-app-mosdns"
+MOSDNS_API="https://api.github.com/repos/$MOSDNS_REPO/releases/latest"
+MOSDNS_RELEASE_URL="https://github.com/$MOSDNS_REPO/releases/latest"
 RESTART_SERVICES="1"
 FORCE_PKG_UPDATE="1"
 
@@ -137,15 +139,35 @@ download_github_api() {
 
 find_asset_url() {
     ASSET_NAME="$1"
-    sed 's/"browser_download_url"/\
+
+    if [ -f "$TMP_ROOT/release.json" ]; then
+        JSON_URL="$(sed 's/"browser_download_url"/\
 "browser_download_url"/g' "$TMP_ROOT/release.json" |
-        sed -n 's/^"browser_download_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' |
-        grep "/$ASSET_NAME$" |
-        head -n1 || true
+            sed -n 's/^"browser_download_url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' |
+            grep "/$ASSET_NAME$" |
+            head -n1 || true)"
+        if [ -n "$JSON_URL" ]; then
+            printf '%s\n' "$JSON_URL"
+            return 0
+        fi
+    fi
+
+    if [ -f "$TMP_ROOT/release.html" ]; then
+        HTML_URL="$(grep -o "/$MOSDNS_REPO/releases/download/[^\"'<> ]*/$ASSET_NAME" "$TMP_ROOT/release.html" | head -n1 || true)"
+        [ -n "$HTML_URL" ] && printf 'https://github.com%s\n' "$HTML_URL"
+        return 0
+    fi
+
+    return 0
 }
 
-fetch_release_json() {
-    download_github_api "$MOSDNS_API" "$TMP_ROOT/release.json" || die "获取 MosDNS 最新 Release 信息失败"
+fetch_release_meta() {
+    if download_github_api "$MOSDNS_API" "$TMP_ROOT/release.json"; then
+        return 0
+    fi
+
+    warn "GitHub API 获取 MosDNS Release 信息失败，改用 releases 页面兜底"
+    download_url "$MOSDNS_RELEASE_URL" "$TMP_ROOT/release.html" || die "获取 MosDNS 最新 Release 信息失败"
 }
 
 get_installed_version() {
@@ -198,7 +220,7 @@ install_release_archive() {
     SDK="$3"
     ASSET_NAME="${DISTR_ARCH}-${SDK}.tar.gz"
 
-    fetch_release_json
+    fetch_release_meta
     ASSET_URL="$(find_asset_url "$ASSET_NAME")"
     [ -n "$ASSET_URL" ] || die "未找到当前架构的 MosDNS Release 包: $ASSET_NAME"
 

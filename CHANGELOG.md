@@ -3,6 +3,7 @@
 ## v1.2.1
 
 - 优化 OpenClash 安装阶段的 `opkg update` 容错：当 Nikki / PassWall 等第三方 feed 临时不可用时，不再直接中断 OpenClash 安装流程，而是警告后继续尝试安装依赖
+- 优化 MosDNS 安装阶段的 GitHub Release 获取逻辑：当 GitHub API 返回 403 或临时不可用时，自动回退到 releases 页面解析下载地址
 
 ## v1.2.0
 
