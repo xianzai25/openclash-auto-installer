@@ -28,7 +28,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/slobys/openclash-auto-inst
 固定稳定版可使用 Release 标签，例如：
 
 ```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/slobys/openclash-auto-installer/v1.2.3/menu.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/slobys/openclash-auto-installer/v1.2.4/menu.sh)"
 ```
 
 如果 GitHub raw 访问慢，可用 jsDelivr：
